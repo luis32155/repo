@@ -1,0 +1,12 @@
+**
+!*/
+!*/pom.xml
+!*/src/
+!*/src/main/
+!*/src/main/**
+!docker/
+!docker/Dockerfile
+**/application-local.yml
+**/*.pem
+**/*.p12
+**/*.jks

@@ -1,0 +1,334 @@
+name: ${COMPOSE_PROJECT_NAME:-cvd-local}
+
+x-java: &java
+  init: true
+  mem_limit: ${JAVA_MEMORY_LIMIT:-512m}
+  cpus: ${JAVA_CPU_LIMIT:-1.0}
+  pids_limit: 200
+  environment:
+    JAVA_TOOL_OPTIONS: "-Xms64m -Xmx${JAVA_HEAP_MAX:-256m} -XX:MaxMetaspaceSize=160m -XX:ReservedCodeCacheSize=48m -XX:MaxDirectMemorySize=64m -XX:ActiveProcessorCount=2 -XX:+UseSerialGC -Xss512k"
+    SPRING_JMX_ENABLED: "false"
+    SPRING_DEVTOOLS_RESTART_ENABLED: "false"
+  logging:
+    driver: json-file
+    options:
+      max-size: "5m"
+      max-file: "2"
+  healthcheck:
+    test: ["CMD-SHELL", "curl --fail --silent http://localhost:$${SERVER_PORT}/actuator/health/liveness > /dev/null"]
+    interval: 20s
+    timeout: 5s
+    start_period: 90s
+    retries: 6
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--maxmemory", "96mb", "--maxmemory-policy", "noeviction", "--save", "", "--appendonly", "no"]
+    mem_limit: 128m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+  config-server:
+    <<: *java
+    image: cvd-local/config-server:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      secrets:
+        - corporate-ca
+      args:
+        SERVICE: config-server
+    env_file: .local/env/config-server.env
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${CONFIG_SERVER_PORT:-8888}:8888"
+    volumes:
+      - ./.local/config-repo:/config-repo:ro
+    secrets:
+      - source: config-keystore
+        target: config-server-keystore.p12
+  ms-auth-token-generator:
+    <<: *java
+    image: cvd-local/ms-auth-token-generator:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      secrets:
+        - corporate-ca
+      args:
+        SERVICE: ms-auth-token-generator
+    env_file: .local/env/ms-auth-token-generator.env
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${TOKEN_GENERATOR_PORT:-8086}:8086"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    secrets:
+      - source: truststore
+        target: truststore.p12
+      - source: rsa-public-without
+        target: rsa_public_key_without_session.pem
+      - source: rsa-public-with
+        target: rsa_public_key_with_session.pem
+      - source: rsa-public-frontend
+        target: rsa_public_key_frontend.pem
+      - source: rsa-private-without
+        target: rsa_private_key_without_session.pem
+  ms-auth-token-validator:
+    <<: *java
+    image: cvd-local/ms-auth-token-validator:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      secrets:
+        - corporate-ca
+      args:
+        SERVICE: ms-auth-token-validator
+    env_file: .local/env/ms-auth-token-validator.env
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${TOKEN_VALIDATOR_PORT:-8087}:8087"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    secrets:
+      - source: truststore
+        target: truststore.p12
+      - source: rsa-public-without
+        target: rsa_public_key_without_session.pem
+      - source: rsa-public-with
+        target: rsa_public_key_with_session.pem
+      - source: rsa-public-frontend
+        target: rsa_public_key_frontend.pem
+      - source: rsa-private-without
+        target: rsa_private_key_without_session.pem
+  ms-authorizer:
+    <<: *java
+    image: cvd-local/ms-authorizer:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      secrets:
+        - corporate-ca
+      args:
+        SERVICE: ms-authorizer
+    env_file: .local/env/ms-authorizer.env
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${AUTHORIZER_PORT:-8088}:8088"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    secrets:
+      - source: keycloak-public
+        target: keycloak_public_key.pem
+      - source: truststore
+        target: truststore.p12
+      - source: rsa-public-without
+        target: rsa_public_key_without_session.pem
+      - source: rsa-public-with
+        target: rsa_public_key_with_session.pem
+      - source: rsa-public-frontend
+        target: rsa_public_key_frontend.pem
+  ms-login:
+    <<: *java
+    image: cvd-local/ms-login:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      secrets:
+        - corporate-ca
+      args:
+        SERVICE: ms-login
+    env_file: .local/env/ms-login.env
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${LOGIN_PORT:-8084}:8084"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    secrets:
+      - source: truststore
+        target: truststore.p12
+      - source: rsa-public-without
+        target: rsa_public_key_without_session.pem
+      - source: rsa-public-with
+        target: rsa_public_key_with_session.pem
+      - source: rsa-public-frontend
+        target: rsa_public_key_frontend.pem
+      - source: rsa-private-without
+        target: rsa_private_key_without_session.pem
+      - source: rsa-private-with
+        target: rsa_private_key_with_session.pem
+      - source: rsa-private-frontend
+        target: rsa_private_key_frontend.pem
+  ms-maintenance-window:
+    <<: *java
+    image: cvd-local/ms-maintenance-window:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      secrets:
+        - corporate-ca
+      args:
+        SERVICE: ms-maintenance-window
+    env_file: .local/env/ms-maintenance-window.env
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${MAINTENANCE_PORT:-8089}:8089"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    secrets:
+      - source: truststore
+        target: truststore.p12
+      - source: rsa-public-without
+        target: rsa_public_key_without_session.pem
+      - source: rsa-public-with
+        target: rsa_public_key_with_session.pem
+      - source: rsa-public-frontend
+        target: rsa_public_key_frontend.pem
+  ms-cards:
+    <<: *java
+    image: cvd-local/ms-cards:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      secrets:
+        - corporate-ca
+      args:
+        SERVICE: ms-cards
+    env_file: .local/env/ms-cards.env
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${CARDS_PORT:-8090}:8090"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    secrets:
+      - source: truststore
+        target: truststore.p12
+      - source: rsa-public-without
+        target: rsa_public_key_without_session.pem
+      - source: rsa-public-with
+        target: rsa_public_key_with_session.pem
+      - source: rsa-public-frontend
+        target: rsa_public_key_frontend.pem
+  ms-products:
+    <<: *java
+    image: cvd-local/ms-products:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      secrets:
+        - corporate-ca
+      args:
+        SERVICE: ms-products
+    env_file: .local/env/ms-products.env
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PRODUCTS_PORT:-8092}:8092"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    secrets:
+      - source: truststore
+        target: truststore.p12
+      - source: rsa-public-without
+        target: rsa_public_key_without_session.pem
+      - source: rsa-public-with
+        target: rsa_public_key_with_session.pem
+      - source: rsa-public-frontend
+        target: rsa_public_key_frontend.pem
+  ms-publications:
+    <<: *java
+    image: cvd-local/ms-publications:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      secrets:
+        - corporate-ca
+      args:
+        SERVICE: ms-publications
+    env_file: .local/env/ms-publications.env
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PUBLICATIONS_PORT:-8091}:8091"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    secrets:
+      - source: truststore
+        target: truststore.p12
+      - source: rsa-public-without
+        target: rsa_public_key_without_session.pem
+      - source: rsa-public-with
+        target: rsa_public_key_with_session.pem
+      - source: rsa-public-frontend
+        target: rsa_public_key_frontend.pem
+  api-gateway:
+    <<: *java
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:8080/actuator/health > /dev/null"]
+      interval: 20s
+      timeout: 5s
+      start_period: 90s
+      retries: 6
+    image: cvd-local/api-gateway:dev
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      secrets:
+        - corporate-ca
+      args:
+        SERVICE: api-gateway
+    env_file: .local/env/api-gateway.env
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    secrets:
+      - source: truststore
+        target: truststore.p12
+      - source: rsa-public-without
+        target: rsa_public_key_without_session.pem
+      - source: rsa-public-with
+        target: rsa_public_key_with_session.pem
+      - source: rsa-public-frontend
+        target: rsa_public_key_frontend.pem
+secrets:
+  corporate-ca:
+    file: ${BUILD_CA_FILE:-./docker/empty-ca.crt}
+  keycloak-public:
+    file: .local/secrets/keycloak_public_key.pem
+  config-keystore:
+    file: .local/secrets/config-server-keystore.p12
+  truststore:
+    file: .local/secrets/truststore.p12
+  rsa-public-without:
+    file: .local/secrets/rsa_public_key_without_session.pem
+  rsa-private-without:
+    file: .local/secrets/rsa_private_key_without_session.pem
+  rsa-public-with:
+    file: .local/secrets/rsa_public_key_with_session.pem
+  rsa-private-with:
+    file: .local/secrets/rsa_private_key_with_session.pem
+  rsa-public-frontend:
+    file: .local/secrets/rsa_public_key_frontend.pem
+  rsa-private-frontend:
+    file: .local/secrets/rsa_private_key_frontend.pem

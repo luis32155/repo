@@ -1,0 +1,7 @@
+# Local Docker runtime (credentials, certificates and generated configuration)
+/.local/
+/.env
+/secrets/
+/corporate-root-ca.cer
+# Existing development material must not be added again.
+/environments_variables_and_secrets_develop/
