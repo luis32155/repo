@@ -1,13 +1,20 @@
 # syntax=docker/dockerfile:1
 FROM maven:3.9-eclipse-temurin-17 AS build
 ARG SERVICE
+ARG MAVEN_TLS_INSECURE=false
 ENV MAVEN_OPTS="-Xmx512m -XX:ActiveProcessorCount=2"
 WORKDIR /build
 COPY ${SERVICE}/pom.xml ./pom.xml
 COPY ${SERVICE}/src/main ./src/main
-RUN --mount=type=cache,target=/root/.m2,sharing=locked \
+RUN --mount=type=cache,id=cvd-maven-${MAVEN_TLS_INSECURE},target=/root/.m2,sharing=locked \
     --mount=type=secret,id=corporate-ca \
     set -eu; \
+    case "$MAVEN_TLS_INSECURE" in \
+      true) echo 'WARNING: Maven certificate-chain validation relaxed for this build only.'; \
+        export MAVEN_OPTS="$MAVEN_OPTS -Dmaven.resolver.transport=wagon -Dmaven.wagon.http.ssl.insecure=true" ;; \
+      false) ;; \
+      *) echo 'MAVEN_TLS_INSECURE must be true or false' >&2; exit 1 ;; \
+    esac; \
     if [ -s /run/secrets/corporate-ca ]; then \
       cp "$JAVA_HOME/lib/security/cacerts" /tmp/build-cacerts; \
       keytool -importcert -noprompt -trustcacerts -alias cvd-corporate-ca \

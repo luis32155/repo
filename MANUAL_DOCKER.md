@@ -327,8 +327,29 @@ Sin CA adicional, deja `BUILD_CA_FILE=./docker/empty-ca.crt`; ese archivo vacio
 forma parte del repositorio y debe conservarse al copiarlo.
 
 Si persiste el error, pide a TI revisar la cadena de certificados que entrega el
-proxy. No utilices opciones Maven para aceptar certificados sin validacion.
+proxy. La solucion permanente es confiar en la CA correcta. La excepcion temporal
+de compilacion se describe a continuacion y debe quedar limitada a pruebas locales.
 Referencia: [secretos durante la compilacion](https://docs.docker.com/build/building/secrets/).
+
+### Compilacion temporal sin validar la confianza de la cadena TLS
+
+Solo para una prueba local autorizada por tu organizacion, puedes ejecutar:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\docker\local.ps1 -Action build -InsecureBuild
+```
+
+Esta opcion selecciona Maven Wagon y relaja la confianza de certificados para las
+descargas Maven de esa compilacion. Conserva la comprobacion de hostname y fechas.
+Las dependencias podrian ser suplantadas: no se recomienda para produccion.
+No modifica la validacion TLS de Windows, Docker ni los micros en ejecucion, y
+no evita bloqueos de descarga de Zscaler. No garantiza resolver otros errores.
+
+El modo normal sigue siendo el predeterminado. Las caches Maven de ambos modos
+estan separadas para no reutilizar dependencias descargadas con validacion relajada.
+Cuando dispongas de la CA correcta, reconstruye sin `-InsecureBuild` y ejecuta `up`
+para reemplazar las imagenes creadas con ese modo. No basta con quitar la opcion
+si continuas ejecutando una imagen previamente construida con ella.
 
 ## 11. Secretos y versionado
 

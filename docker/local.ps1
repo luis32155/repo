@@ -5,9 +5,11 @@ param(
     [string[]]$Services = @(),
     [string]$SecretsDirectory = '',
     [string]$ManifestsDirectory = '',
-    [switch]$Force
+    [switch]$Force,
+    [switch]$InsecureBuild
 )
 $ErrorActionPreference = 'Stop'
+if ($InsecureBuild -and $Action -ne 'build') { throw '-InsecureBuild solo se permite con -Action build.' }
 $root = Split-Path $PSScriptRoot -Parent
 Set-Location $root
 $allServices = @('config-server','ms-auth-token-generator','ms-auth-token-validator','ms-authorizer','ms-login','ms-maintenance-window','ms-cards','ms-products','ms-publications','api-gateway')
@@ -127,8 +129,10 @@ if ($Action -eq 'build' -and -not $env:BUILD_CA_FILE -and (Test-Path 'corporate-
 }
 switch ($Action) {
     'build' {
+        $tlsMode = if ($InsecureBuild) { 'true' } else { 'false' }
+        if ($InsecureBuild) { Write-Warning 'Solo para esta compilacion: Maven no validara la confianza de la cadena TLS. Las dependencias descargadas podrian ser suplantadas.' }
         $selected = if ($Services.Count) { $Services } else { $allServices }
-        foreach ($service in $selected) { if ($service -ne 'redis') { Invoke-Compose @('build',$service) } }
+        foreach ($service in $selected) { if ($service -ne 'redis') { Invoke-Compose @('build','--build-arg',"MAVEN_TLS_INSECURE=$tlsMode",$service) } }
     }
     'up' { Invoke-Compose (@('up','-d','--wait','--wait-timeout','240') + $Services) }
     'down' { Invoke-Compose @('down') }
