@@ -1,5 +1,18 @@
 # Certificado corporativo para Maven
 
+En Windows, puedes intentar exportar automaticamente la CA que tu equipo ya
+confia para Maven Central, desde la raiz del proyecto:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\docker\export-maven-ca.ps1
+```
+
+Requiere Windows PowerShell 5.1. Valida HTTPS, la cadena y que la raiz pertenezca
+al almacen de confianza de Windows; si falla, no escribe el archivo. No genera
+una CA nueva ni exporta claves privadas. Usa `-Force` para reemplazar una exportacion
+previa. Si Docker usa un proxy distinto de Windows, esta CA puede no ser suficiente:
+TI debe confirmar la cadena de esa conexion.
+
 Coloca el certificado publico real de la CA de tu empresa en la raiz del proyecto:
 
 ```text
