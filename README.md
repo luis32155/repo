@@ -5,7 +5,7 @@ El repositorio contiene los dos proyectos independientes, sus pruebas, configura
 | Proyecto | Contenido | Requisitos |
 | --- | --- | --- |
 | [bjf7-lineage-consumer](bjf7-lineage-consumer/) | Consumer Kafka con SQL Server y persistencia adicional en MongoDB para eventos TAPP. | Java 17, Gradle y acceso al Artifactory corporativo. |
-| [log-audit-consumer-hexagonal-mapstruct](log-audit-consumer-hexagonal-mapstruct/) | Servicio HTTP con arquitectura hexagonal, puertos, adaptadores y mappers generados con MapStruct. | Java 25, Spring Boot 4.0.9 y Maven. |
+| [log-audit-consumer-hexagonal-mapstruct](log-audit-consumer-hexagonal-mapstruct/) | Servicio HTTP con arquitectura hexagonal, puertos, adaptadores y mappers generados con MapStruct. | Java 25, Spring Boot 4.0.9 y Gradle Wrapper 9.1.0. |
 
 Cada proyecto incluye su propio README con las variables de entorno y los pasos de ejecución. Se ejecutan y compilan por separado.
 
@@ -31,7 +31,7 @@ La configuración de JaCoCo exige 90 % de cobertura de líneas y ramas. La últi
 Para el servicio hexagonal, desde su carpeta y usando Java 25:
 
 ```powershell
-mvn clean verify
+.\gradlew.bat clean build
 ```
 
 Sus pruebas usan una API HTTP simulada. MapStruct genera las implementaciones de los mappers durante la compilación.

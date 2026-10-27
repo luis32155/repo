@@ -1,6 +1,6 @@
 # Microservicio de Log Audit con arquitectura hexagonal
 
-Proyecto independiente con **Java 25, Spring Boot 4.0.9, MapStruct 1.6.3 y Maven**. Recibe tu evento por HTTP y lo envía mediante `RestClient` a la API de auditoría que indicaste. El dominio y los casos de uso utilizan Java sin dependencias de Spring, Jackson, Jakarta Validation o MapStruct.
+Proyecto independiente con **Java 25, Spring Boot 4.0.9, MapStruct 1.6.3 y Gradle 9.1.0**. Recibe tu evento por HTTP y lo envía mediante `RestClient` a la API de auditoría que indicaste. El dominio y los casos de uso utilizan Java sin dependencias de Spring, Jackson, Jakarta Validation o MapStruct.
 
 ```text
 Tu aplicación o Postman
@@ -21,35 +21,38 @@ El consumidor transmite las cuatro cabeceras y todos los campos del JSON del eje
 ## 1. Requisitos
 
 - JDK 25.
-- Maven 3.6.3 o posterior.
+- Gradle Wrapper incluido: `gradlew` y `gradlew.bat`. Descarga Gradle 9.1.0 en la primera ejecución; no requiere instalar Gradle por separado.
 - La API de auditoría ejecutándose en el puerto 8181 para una prueba real. Las pruebas automatizadas utilizan un servidor HTTP simulado y no necesitan esa API.
 
-Comprueba `java -version` y `mvn -version`: ambos deben utilizar Java 25. Si Maven muestra Java 21 u otra versión, corrige `JAVA_HOME` antes de compilar. En PowerShell, para una instalación en la ruta habitual:
+Comprueba `java -version` y `.\gradlew.bat --version`: ambos deben utilizar Java 25. Configura `JAVA_HOME` antes de compilar. En PowerShell, para una instalación en la ruta habitual:
 
 ```powershell
 $env:JAVA_HOME = 'C:\Program Files\Java\jdk-25'
 $env:Path = "$env:JAVA_HOME\bin;$env:Path"
-mvn -version
+java -version
+.\gradlew.bat --version
 ```
 
 ## 2. Abrir y ejecutar
 
-Abre esta carpeta como proyecto Maven en IntelliJ IDEA y selecciona JDK 25. La clase de inicio es `LogAuditConsumerApplication`.
+Abre `build.gradle` como proyecto Gradle en IntelliJ IDEA. Selecciona JDK 25 tanto en el SDK del proyecto como en **Gradle JVM**, y utiliza el Wrapper del proyecto. La clase de inicio es `LogAuditConsumerApplication`.
 
 Desde una terminal ubicada en esta carpeta también puedes ejecutar:
 
 ```powershell
-mvn clean verify
-mvn spring-boot:run
+.\gradlew.bat clean build
+.\gradlew.bat bootRun
 ```
 
-Después de empaquetar, puedes iniciarlo sin Maven:
+Después de empaquetar, puedes iniciar el JAR ejecutable:
 
 ```powershell
-java -jar target/log-audit-consumer-1.0.0.jar
+java -jar build/libs/log-audit-consumer-1.0.0.jar
 ```
 
 El microservicio escucha en el puerto **8080**. La API que consume sigue en el **8181**. El endpoint de salud es `GET http://localhost:8080/actuator/health`; indica la salud del consumidor, no verifica la disponibilidad de la API de auditoría.
+
+En Linux o macOS, los comandos equivalentes son `./gradlew clean build` y `./gradlew bootRun`. La toolchain y el nivel de compilación están fijados en Java 25 en `build.gradle`.
 
 ## 3. Probar con tu JSON
 
@@ -111,7 +114,7 @@ Ejemplo en PowerShell:
 ```powershell
 $env:AUDIT_API_URL = 'http://localhost:8181/api/v1/audit/security/log'
 $env:AUDIT_API_READ_TIMEOUT = '15s'
-mvn spring-boot:run
+.\gradlew.bat bootRun
 ```
 
 `.env.example` es una referencia: Spring Boot no lo carga automáticamente. Define las variables en la terminal o en el IDE. Si ejecutas el consumidor en un contenedor, `localhost` será ese contenedor; configura la URL de acuerdo con la red donde esté la API.
@@ -181,11 +184,18 @@ AuditResult     --AuditWebMapper--> AuditLogResponse
 
 La configuración común `StrictMapperConfig` registra los mappers como beans de Spring y utiliza `ReportingPolicy.ERROR` para propiedades de origen o destino sin mapear y conversiones con pérdida. Si agregas un campo a un modelo y falta su conversión, la compilación falla.
 
-El procesador `mapstruct-processor` está configurado explícitamente en `maven-compiler-plugin`, necesario para generar los mappers al compilar con este JDK. Maven crea `AuditWebMapperImpl` y `AuditApiMapperImpl` en `target/generated-sources/annotations`. No edites esas implementaciones. En IntelliJ, recarga el proyecto Maven y habilita el procesamiento de anotaciones si el IDE lo requiere.
+El procesador `mapstruct-processor` está configurado explícitamente como `annotationProcessor` en `build.gradle`, necesario para generar los mappers al compilar con este JDK. Gradle crea `AuditWebMapperImpl` y `AuditApiMapperImpl` en `build/generated/sources/annotationProcessor/java/main`. Las pruebas se ejecutan con JUnit Platform y reciben `examples/audit-request.json` como recurso de prueba. En IntelliJ, recarga el proyecto Gradle y habilita el procesamiento de anotaciones si el IDE lo requiere.
 
 ### Estructura del proyecto
 
 ```text
+build.gradle
+settings.gradle
+gradle.properties
+gradlew
+gradlew.bat
+gradle/wrapper/gradle-wrapper.jar
+gradle/wrapper/gradle-wrapper.properties
 src/main/java/pe/com/scotiabank/tapp/audit/
   LogAuditConsumerApplication.java
   domain/model/
@@ -228,15 +238,19 @@ postman/LogAuditConsumer-Local.postman_environment.json
 ## 7. Pruebas automatizadas
 
 ```powershell
-mvn test
+.\gradlew.bat test
 ```
 
 Las pruebas levantan el microservicio en un puerto aleatorio y una API simulada en otro puerto aleatorio. Verifican la transmisión de las cabeceras, el JSON completo, los veinte detalles, el desplazamiento horario, la validación anidada, los errores de la API, las respuestas incompatibles, la conexión fallida y los tiempos de espera.
 
 Las reglas de `HexagonalArchitectureTest`, con ArchUnit, comprueban además que el dominio dependa solo de Java y de sí mismo; que la aplicación dependa solo de Java, dominio y aplicación; que los adaptadores de entrada y salida no se acoplen entre sí; y que los puertos sean interfaces. Los mappers generados también forman parte de las clases comprobadas.
 
+Los resultados HTML se generan en `build/reports/tests/test/index.html`, y los resultados XML en `build/test-results/test`.
+
 ## Referencias
 
+- [Compatibilidad de Gradle con Java 25](https://docs.gradle.org/current/userguide/compatibility.html#java).
+- [Plugin de Gradle de Spring Boot 4](https://docs.spring.io/spring-boot/4.0/gradle-plugin/index.html).
 - [Clientes REST de Spring Boot 4](https://docs.spring.io/spring-boot/4.0/reference/io/rest-client.html).
 - [Requisitos de Spring Boot 4](https://docs.spring.io/spring-boot/4.0/system-requirements.html).
 - [Jackson 3 en Spring Boot 4](https://docs.spring.io/spring-boot/4.0/reference/features/json.html).
