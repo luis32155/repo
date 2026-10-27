@@ -1,0 +1,104 @@
+{
+  "info": {
+    "_postman_id": "fec5cace-e06f-4122-828f-272fa7bbccc9",
+    "name": "Log Audit Consumer - Hexagonal y MapStruct",
+    "description": "Consumidor Java 25 y Spring Boot 4. Selecciona el environment Log Audit - Local 8080. Postman llama al consumidor en el puerto 8080; el consumidor llama a la API de auditoría configurada en AUDIT_API_URL, por defecto en el puerto 8181. La petición incluye el JSON completo con sus veinte detalles.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "item": [
+    {
+      "name": "1 - Salud del consumidor",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/actuator/health",
+        "description": "Verifica que el consumidor esté iniciado. No comprueba la disponibilidad de la API destino."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"El consumidor responde HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"El estado de salud es UP\", function () {",
+              "    pm.expect(pm.response.json().status).to.eql(\"UP\");",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "2 - Enviar evento de auditoría",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-api-version",
+            "value": "{{api_version}}",
+            "type": "text"
+          },
+          {
+            "key": "x-channel-id",
+            "value": "{{channel_id}}",
+            "type": "text"
+          },
+          {
+            "key": "x-originating-appl-code",
+            "value": "{{originating_appl_code}}",
+            "type": "text"
+          },
+          {
+            "key": "x-country-code",
+            "value": "{{country_code}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"log_timestamp\": \"2026-07-09T15:19:59-05:00\",\n  \"event_log_classification\": \"AUDIT_LOG\",\n  \"event_timestamp\": \"2026-07-09T15:19:58-05:00\",\n  \"event_type\": \"FATAL\",\n  \"event_priority\": \"MEDIUM\",\n  \"event_category\": \"SUSPENDED\",\n  \"account_name\": \"Campo nombre de la cuenta\",\n  \"source_host_name\": \"Campo source host name\",\n  \"source_ip_address\": \"888.888.888.888\",\n  \"destination_host_name\": \"Campo destination host name\",\n  \"destination_ip_address\": \"999.999.999.999\",\n  \"session_identifier\": \"Campo session identifier\",\n  \"audit_action\": \"ENUMERATE\",\n  \"event_message\": {\n    \"app_code\": \"TAPP\",\n    \"app_description\": \"Telebanking 504\",\n    \"app_operation_code\": \"B3QXRCR\",\n    \"app_operation_description\": \"Registro de credenciales exitosamente :D\",\n    \"type_id\": \"DNI\",\n    \"number_id\": \"33445566\",\n    \"device_id\": \"Campo device id\",\n    \"operation_number\": \"Campo operation number\",\n    \"cams_id\": \"campo-cams-id-7dec-11d0-a765-00a0c91e6bf6\",\n    \"bt_account\": \"Campo bt account\",\n    \"channel_payload_header\": {\n      \"header\": \"Prueba con Miguel\",\n      \"description\": \"Campo de descripción del detalle de la operacion - description - Description aún mas larga\"\n    },\n    \"channel_payload_detail\": [\n      {\n        \"key\": \"Campo Key 1 Campo Key 1 Campo Key 1\",\n        \"value\": \"Campo Value 1 Campo Value 1 Campo Value 1\"\n      },\n      {\n        \"key\": \"Campo Key 2 Campo Key 2 Campo Key 2\",\n        \"value\": \"Campo Value 2 Campo Value 2 Campo Value 2\"\n      },\n      {\n        \"key\": \"Campo Key 3 Campo Key 3 Campo Key 3\",\n        \"value\": \"Campo Value 3 Campo Value 3 Campo Value 3\"\n      },\n      {\n        \"key\": \"Campo Key 4 Campo Key 4 Campo Key 4\",\n        \"value\": \"Campo Value 4 Campo Value 4 Campo Value 4\"\n      },\n      {\n        \"key\": \"Campo Key 5 Campo Key 5 Campo Key 5\",\n        \"value\": \"Campo Value 5 Campo Value 5 Campo Value 5\"\n      },\n      {\n        \"key\": \"Campo Key 6 Campo Key 6 Campo Key 6\",\n        \"value\": \"Campo Value 6 Campo Value 6 Campo Value 6\"\n      },\n      {\n        \"key\": \"Campo Key 7 Campo Key 7 Campo Key 7\",\n        \"value\": \"Campo Value 7 Campo Value 7 Campo Value 7\"\n      },\n      {\n        \"key\": \"Campo Key 8 Campo Key 8 Campo Key 8\",\n        \"value\": \"Campo Value 8 Campo Value 8 Campo Value 8\"\n      },\n      {\n        \"key\": \"Campo Key 9 Campo Key 9 Campo Key 9\",\n        \"value\": \"Campo Value 9 Campo Value 9 Campo Value 9\"\n      },\n      {\n        \"key\": \"Campo Key 10 Campo Key 10 Campo Key 10\",\n        \"value\": \"Campo Value 10 Campo Value 10 Campo Value 10\"\n      },\n      {\n        \"key\": \"Campo Key 11 Campo Key 11 Campo Key 11\",\n        \"value\": \"Campo Value 11 Campo Value 11 Campo Value 11\"\n      },\n      {\n        \"key\": \"Campo Key 12 Campo Key 12 Campo Key 12\",\n        \"value\": \"Campo Value 12 Campo Value 12 Campo Value 12\"\n      },\n      {\n        \"key\": \"Campo Key 13 Campo Key 13 Campo Key 13\",\n        \"value\": \"Campo Value 13 Campo Value 13 Campo Value 13\"\n      },\n      {\n        \"key\": \"Campo Key 14 Campo Key 14 Campo Key 14\",\n        \"value\": \"Campo Value 14 Campo Value 14 Campo Value 14\"\n      },\n      {\n        \"key\": \"Campo Key 15 Campo Key 15 Campo Key 15\",\n        \"value\": \"Campo Value 15 Campo Value 15 Campo Value 15\"\n      },\n      {\n        \"key\": \"Campo Key 16 Campo Key 16 Campo Key 16\",\n        \"value\": \"Campo Value 16 Campo Value 16 Campo Value 16\"\n      },\n      {\n        \"key\": \"Campo Key 17 Campo Key 17 Campo Key 17\",\n        \"value\": \"Campo Value 17 Campo Value 17 Campo Value 17\"\n      },\n      {\n        \"key\": \"Campo Key 18 Campo Key 18 Campo Key 18\",\n        \"value\": \"Campo Value 18 Campo Value 18 Campo Value 18\"\n      },\n      {\n        \"key\": \"Campo Key 19 Campo Key 19 Campo Key 19\",\n        \"value\": \"Campo Value 19 Campo Value 19 Campo Value 19\"\n      },\n      {\n        \"key\": \"Campo Key 20 Campo Key 20 Campo Key 20\",\n        \"value\": \"Campo Value 20 Campo Value 20 Campo Value 20\"\n      }\n    ]\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{base_url}}/api/v1/audit/security/log",
+        "description": "Envía el JSON completo al consumidor del puerto 8080. Necesita que la API destino esté disponible en la URL configurada en el microservicio. Sustituye las cabeceras de ejemplo en el environment por las de tu ambiente. Los scripts verifican la respuesta de éxito proporcionada como contrato."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"La operación responde con un estado HTTP exitoso\", function () {",
+              "    pm.expect(pm.response.code).to.be.within(200, 299);",
+              "});",
+              "pm.test(\"La respuesta contiene estados de auditoría OK\", function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body).to.have.property(\"data\").that.is.an(\"array\").that.is.not.empty;",
+              "    body.data.forEach(function (item) {",
+              "        pm.expect(item).to.have.property(\"status\", \"OK\");",
+              "    });",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    }
+  ]
+}

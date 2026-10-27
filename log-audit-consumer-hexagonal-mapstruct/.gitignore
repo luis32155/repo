@@ -1,0 +1,6 @@
+/target/
+/.m2-repository/
+/.idea/
+*.iml
+*.log
+.env

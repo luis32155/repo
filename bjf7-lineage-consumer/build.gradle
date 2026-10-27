@@ -1,0 +1,144 @@
+plugins {
+    id 'org.springframework.boot' version '3.5.15'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'com.diffplug.spotless' version "6.25.0"
+    id 'com.github.spotbugs' version "5.0.14"
+    id 'jacoco'
+    id 'pmd'
+    id 'checkstyle'
+    id 'java'
+}
+group = 'pe.com.scotiabank.lineage.consumer'
+version = '1.0.0'
+description = 'bjf7-lineage-consumer'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    sourceCompatibility = '17'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 17
+}
+configurations {
+    compileOnly {
+       extendsFrom annotationProcessor
+    }
+}
+repositories {
+    maven {
+       url "${artifactory_contextUrl}/virtual-release-bns"
+       credentials {
+          username = "${artifactory_user}"
+          password = "${artifactory_password}"
+       }
+       metadataSources {
+          mavenPom()
+          artifact()
+          ignoreGradleMetadataRedirection()
+       }
+    }
+    maven {
+       url "${artifactory_contextUrl}/local-gradle-bns"
+       credentials {
+          username = "${artifactory_user}"
+          password = "${artifactory_password}"
+       }
+       metadataSources {
+          mavenPom()
+          artifact()
+          ignoreGradleMetadataRedirection()
+       }
+    }
+    maven {
+       url "${artifactory_contextUrl}/ext-release-maven"
+       credentials {
+          username = "${artifactory_user}"
+          password = "${artifactory_password}"
+       }
+       metadataSources {
+          mavenPom()
+          artifact()
+          ignoreGradleMetadataRedirection()
+       }
+    }
+    maven {
+       url "${artifactory_contextUrl}/ext-release-confluent"
+       credentials {
+          username = "${artifactory_user}"
+          password = "${artifactory_password}"
+       }
+       metadataSources {
+          mavenPom()
+          artifact()
+          ignoreGradleMetadataRedirection()
+       }
+    }
+}
+dependencies {
+    implementation('solrev:starter-told:2.1.2') {
+       exclude group: 'commons-io', module: 'commons-io'
+       exclude group: 'commons-beanutils', module: 'commons-beanutils'
+       exclude group: 'org.springframework.boot', module: 'spring-boot-starter-web'
+       exclude group: 'org.apache.tomcat.embed', module: 'tomcat-embed-core'
+    }
+    implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.56'
+    implementation 'org.apache.tomcat.embed:tomcat-embed-el:10.1.56'
+    implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:10.1.56'
+    implementation 'org.apache.tomcat:tomcat-annotations-api:10.1.56'
+    implementation 'org.apache.tomcat:tomcat-juli:10.1.56'
+
+    implementation 'commons-io:commons-io:2.18.0'
+    implementation 'commons-beanutils:commons-beanutils:1.11.0'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation('org.springframework.boot:spring-boot-starter-actuator'){
+       exclude group: 'org.hdrhistogram', module: 'HdrHistogram'
+       exclude group: 'org.latencyutils', module: 'LatencyUtils'
+    }
+    implementation('org.springframework.kafka:spring-kafka'){
+       exclude group: 'org.xerial.snappy', module: 'snappy-java'
+       exclude group: 'org.lz4', module: 'lz4-java'
+    }
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.22.0")
+    implementation('io.confluent:kafka-json-schema-serializer:8.0.3'){
+       exclude group: 'io.github.classgraph', module: 'classgraph'
+       exclude group: 'com.google.code.findbugs', module: 'jsr305'
+       exclude group: 'com.damnhandy', module: 'handy-uri-templates'
+       exclude group: 'com.fasterxml.jackson.dataformat', module: 'jackson-dataformat-csv'
+       exclude group: 'org.glassfish.jersey.core', module: 'jersey-common'
+       exclude group: 'org.jetbrains', module: 'annotations'
+       exclude group: 'org.xerial.snappy', module: 'snappy-java'
+       exclude group: 'org.lz4', module: 'lz4-java'
+       exclude group: 'commons-digester', module: 'commons-digester'
+       exclude group: 'commons-collections', module: 'commons-collections'
+       exclude group: 'commons-validator', module: 'commons-validator'
+       exclude group: 'commons-io', module: 'commons-io'
+       exclude group: 'org.scala-lang', module: 'scala-library'
+       exclude group: 'org.apache.commons', module: 'commons-lang3'
+    }
+    implementation 'org.apache.commons:commons-lang3:3.18.0'
+    implementation 'org.scala-lang:scala-library:2.13.16'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    runtimeOnly 'com.microsoft.sqlserver:mssql-jdbc:13.3.0.jre11-preview'
+
+    compileOnly 'org.projectlombok:lombok'
+    compileOnly 'net.jcip:jcip-annotations:1.0'
+    compileOnly 'com.github.spotbugs:spotbugs-annotations:4.8.6'
+
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-engine:1.13.4'
+}
+tasks.named('test') {
+    useJUnitPlatform()
+}
+apply from: "$rootDir/gradle/static-analysis.gradle"
+apply from: "$rootDir/gradle/jacoco.gradle"

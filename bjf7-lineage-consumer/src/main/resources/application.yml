@@ -1,0 +1,79 @@
+server:
+  port: ${SERVER_PORT}
+
+spring:
+  jmx:
+    enabled: true
+  application:
+    name: bjf7-lineage-consumer
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    default-property-inclusion: non_null
+  data:
+    mongodb:
+      uri: "${MONGODB_URI:mongodb://localhost:27017/lineage_audit?retryWrites=false}"
+      database: ${MONGODB_DATABASE:lineage_audit}
+  datasource:
+    driver-class-name: ${SPRING-R2DBC-DRIVER}
+    url: ${SPRING-R2DBC-URL}
+    username: ${SPRING-R2DBC-USERNAME}
+    password: ${SPRING-R2DBC-PASSWORD}
+    ddl-auto: none
+    hikari:
+      maximum-pool-size: 100
+      minimum-idle: 10
+      connection-timeout: 300000
+  jpa:
+    hibernate:
+      ddl-auto: none
+      default-schema: ${SPRING-R2DBC-SCHEMA}
+    properties:
+      hibernate:
+        dialect: ${SPRING-R2DBC-DIALECT}
+        jdbc:
+          batch_size: ${MAX_POLL_RECORDS}
+    show-sql: ${SPRING-R2DBC-SHOW-SQL}
+
+logging:
+  level:
+    root: ${LOGGING_LEVEL_ROOT}
+    pe:
+      com:
+        scotiabank: ${LOGGING_LEVEL_SCOTIABANK}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+app:
+  api:
+    baseUri: /api/v1
+  mongodb:
+    application-code: ${MONGODB_APPLICATION_CODE:TAPP}
+    collection: ${MONGODB_COLLECTION:tapp_audit_events}
+    retention-days: ${MONGODB_RETENTION_DAYS:365}
+    event-type-labels:
+      "20": INFORMATION
+  kafka:
+    properties:
+      topic: ${KAFKA-TOPIC}
+      group-id: ${KAFKA-GROUP-ID}
+      bootstrap-servers: ${KAFKA-BOOTSTRAP-SERVERS}
+      auto-offset-reset: earliest
+      security-protocol: SASL_SSL
+      sasl-mechanism: PLAIN
+      sasl-login-retry-backoff-max-ms: 400000
+      sasl-login-retry-backoff-ms: 200000
+      ssl-endpoint-identification-algorithm: https
+      schema-registry-url: ${SCHEMA-REGISTRY-URL}
+      auto-register-schemas: ${AUTO_REGISTER_SCHEMAS}
+      schema-registry-use-proxy: ${SCHEMA_REGISTRY_USE_PROXY}
+      schema-registry-proxy-host: ${SCHEMA_REGISTRY_PROXY_HOST}
+      schema-registry-proxy-port: ${SCHEMA_REGISTRY_PROXY_PORT}
+      schema-registry-basic-auth-credentials-source: ${SCHEMA_REGISTRY_BASIC_AUTH_CREDENTIALS_SOURCE}
+      schema-registry-basic-auth-user-info: ${SCHEMA_REGISTRY_API_KEY}:${SCHEMA_REGISTRY_API_SECRET}
+      max-poll-records: ${MAX_POLL_RECORDS}
+      kafka-api-key: ${KAFKA-API-KEY}
+      kafka-api-secret: ${KAFKA-API-SECRET}

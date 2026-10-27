@@ -1,0 +1,27 @@
+checkstyle {
+    toolVersion = '10.21.4'
+    configFile = rootProject.file('config/checkstyle/google_checks.xml')
+    configProperties = [
+        'org.checkstyle.google.suppressionfilter.config':
+            rootProject.file('config/checkstyle/checkstyle-suppressions.xml').absolutePath
+    ]
+    maxErrors = 0
+    maxWarnings = 0
+    ignoreFailures = false
+}
+
+tasks.withType(Checkstyle).configureEach {
+    classpath = files()
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+spotless {
+    java {
+        target 'src/**/*.java'
+        googleJavaFormat('1.25.2')
+        removeUnusedImports()
+    }
+}

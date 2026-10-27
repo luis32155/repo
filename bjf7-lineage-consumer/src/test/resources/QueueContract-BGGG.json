@@ -1,0 +1,31 @@
+{
+  "metadata": {
+    "event_name": "AUDIT",
+    "event_action": "CREATE",
+    "country": "PE",
+    "source_id": "BGGG",
+    "schema_name": "unit-audit",
+    "trx_ind": "unit-bggg"
+  },
+  "payload": {
+    "auditLogs": {
+      "uuid": "a5969a83-5b14-4b4a-87ee-14554e14ac20",
+      "timestamp": "2026-10-21T12:00:00-05:00",
+      "classification": "0B",
+      "priority": "20",
+      "category": "40",
+      "source_host_name": "unit-producer",
+      "source_ip_address": "127.0.0.1",
+      "destination_host_name": "unit-consumer",
+      "destination_ip_address": "127.0.0.1",
+      "session_identifier": "unit-session",
+      "audit_action": "20",
+      "legacy_ind": "N",
+      "event_timestamp": "2026-10-21T12:00:00-05:00",
+      "event_type": "20",
+      "account_name": "unit-account",
+      "message": "{\"app_code\":\"BGGG\",\"app_operation_code\":\"DO\",\"type_id\":\"DNI\",\"number_id\":\"12345678\",\"device_id\":\"unit-device\",\"operation_number\":\"unit-operation\"}"
+    },
+    "result": true
+  }
+}

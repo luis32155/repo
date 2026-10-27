@@ -1,0 +1,21 @@
+mode: ContinuousDeployment
+branches:
+  feature:
+    regex: (feature|bugfix)[\/-]
+    tag: useBranchName
+    increment: Patch
+  develop:
+    regex: ^develop$
+    tag: ci
+  release:
+    regex: ^releases?[/-]
+    tag: rc
+  hotfix:
+    regex: hotfix(es)?[/-]
+    tag: fix
+  master:
+    regex: master
+    tag:
+    increment: Patch
+    prevent-increment-of-merged-branch-version: true
+    track-merge-target: false
