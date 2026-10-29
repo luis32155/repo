@@ -1,13 +1,16 @@
 # Proyectos de auditoría
 
-El repositorio contiene los dos proyectos independientes, sus pruebas, configuración, ejemplos y archivos de Postman.
+El repositorio contiene tres proyectos independientes, sus pruebas, configuración, ejemplos y archivos de Postman.
 
 | Proyecto | Contenido | Requisitos |
 | --- | --- | --- |
 | [bjf7-lineage-consumer](bjf7-lineage-consumer/) | Consumer Kafka con SQL Server y persistencia adicional en MongoDB para eventos TAPP. | Java 17, Gradle y acceso al Artifactory corporativo. |
 | [log-audit-consumer-hexagonal-mapstruct](log-audit-consumer-hexagonal-mapstruct/) | Servicio HTTP con arquitectura hexagonal, puertos, adaptadores y mappers generados con MapStruct. | Java 25, Spring Boot 4.0.9 y Gradle Wrapper 9.1.0. |
+| [log-audit-consumer-reactive](log-audit-consumer-reactive/) | POC reactiva con WebFlux, WebClient, Reactor Netty, puertos con Mono y MapStruct. | Java 25, Spring Boot 4.0.7 y Gradle Wrapper 9.1.0. |
 
 Cada proyecto incluye su propio README con las variables de entorno y los pasos de ejecución. Se ejecutan y compilan por separado.
+
+La versión reactiva también está disponible como [ZIP listo para descargar](downloads/log-audit-consumer-reactive-java25-gradle.zip), con su código, Wrapper, pruebas, documentación y Postman.
 
 ## Postman
 
@@ -17,6 +20,8 @@ Los archivos están en [log-audit-consumer-hexagonal-mapstruct/postman](log-audi
 - [Environment local](log-audit-consumer-hexagonal-mapstruct/postman/LogAuditConsumer-Local.postman_environment.json).
 
 Importa ambos archivos en Postman y selecciona el environment **Log Audit - Local 8080**. Incluyen la consulta de salud y el envío de un evento con sus veinte detalles. Para el envío real, el servicio HTTP necesita la API de auditoría configurada en `AUDIT_API_URL`, cuyo valor local por defecto usa el puerto 8181.
+
+Para la POC reactiva, importa su [colección](log-audit-consumer-reactive/postman/LogAuditConsumer.postman_collection.json) y su [environment](log-audit-consumer-reactive/postman/LogAuditConsumer-Local.postman_environment.json), y selecciona **Log Audit Reactive - Local 8080**. Configura `AUDIT_API_URL` con la dirección de la API destino. El [README reactivo](log-audit-consumer-reactive/README.md) explica la configuración y cómo inspeccionar el detalle original de un rechazo HTTP 400.
 
 ## Pruebas
 
@@ -35,3 +40,17 @@ Para el servicio hexagonal, desde su carpeta y usando Java 25:
 ```
 
 Sus pruebas usan una API HTTP simulada. MapStruct genera las implementaciones de los mappers durante la compilación.
+
+Para la versión reactiva, desde `log-audit-consumer-reactive` y usando Java 25:
+
+```powershell
+.\gradlew.bat clean build
+```
+
+La verificación ejecutó 96 casos sin fallos ni omitidos: 50 unitarios, 39 de integración y 7 de arquitectura. Las unitarias del servicio, cliente y mappers no levantan Spring ni servidores. La integración usa una API HTTP local simulada y comprueba el contrato completo, WebFlux/Netty, errores, timeouts y cancelación. ArchUnit comprueba las capas y prohíbe clientes bloqueantes, Servlet y llamadas a `Mono.block()` en producción.
+
+Para ejecutar sólo las 50 pruebas unitarias:
+
+```powershell
+.\gradlew.bat test --tests '*SubmitAuditServiceTest' --tests '*AuditApiClientTest' --tests '*AuditMappersTest'
+```
